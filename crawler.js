@@ -116,8 +116,11 @@ function download () {
                   obj.url = $target.prop('src')
                   obj.desc = $target.prop('alt')
                   emotGroup.list.push(obj)
-                  if (!fs.existsSync(path.resolve(__dirname, title))) {
-                    fs.mkdirSync(path.resolve(__dirname, title))
+                  if (!fs.existsSync(path.resolve(__dirname, `pics/${title}`))) {
+                    fs.mkdirSync(path.resolve(__dirname, `pics/${title}`), {
+                      recursive: true
+                    })
+                    console.log('Create Dir: ', title)
                   }
                   let fileName = obj.url.slice(obj.url.lastIndexOf('/') + 1)
                   downloadFile(obj.url, `pics/${title}/${fileName}`, function(){
