@@ -78,6 +78,6 @@ setInterval(() => {
   console.log(`执行 ${k}`)
   k += 1
   patchEmotUrl()
-}, 60000)
+}, 10000)
 
 
