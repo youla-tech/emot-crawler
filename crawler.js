@@ -71,13 +71,64 @@ function patchEmotUrl () {
   // })
 }
 
-patchEmotUrl()
-let k = 1
-setInterval(() => {
-  console.log('==========================\n')
-  console.log(`执行 ${k}`)
-  k += 1
-  patchEmotUrl()
-}, 10000)
+// patchEmotUrl()
+// let k = 1
+// setInterval(() => {
+//   console.log('==========================\n')
+//   console.log(`执行 ${k}`)
+//   k += 1
+//   patchEmotUrl()
+// }, 10000)
 
+function downloadFile(uri, filename, callback){
+  var stream = fs.createWriteStream(filename);
+  request(uri).pipe(stream).on('close', callback);
+}
 
+function download () {
+  let files = fs.readdirSync('emot')
+  const emotArray = []
+  files.forEach(function (item, index) {
+    if (item.includes('js')) {
+      let data = fs.readFileSync(path.join('emot', item), 'utf8')
+      data = data.slice(data.indexOf('['))
+      data = JSON.parse(data)
+      Array.from(data).forEach(element => {
+        request(element, (error, response, body) => {
+          if (!error && response.statusCode == 200) {
+            const $ = cheerio.load(body)
+            const $list = $('.artile_des')
+            let title = $('.pic-title > h1 > a').text()
+            title = title.slice(0, title.indexOf('（'))
+            const emotGroup = {
+              title,
+              list: []
+            }
+            console.log(emotGroup)
+            for (let i = 0; i < $list.length; i++) {
+              const obj = {}
+              const $listItem = $list[i];
+              const $target = $('img', $listItem)
+              obj.url = $target.prop('src')
+              obj.desc = $target.prop('alt')
+              emotGroup.list.push(obj)
+              if (!fs.existsSync(path.resolve(__dirname, title))) {
+                fs.mkdirSync(path.resolve(__dirname, title))
+              }
+              let fileName = obj.url.slice(obj.url.lastIndexOf('/') + 1)
+              downloadFile(obj.url, `pics/${title}/${fileName}`, function(){
+                console.log(`${fileName} 下载成功`);
+              })
+            }
+            emotArray.push(emotGroup)
+          }
+        })
+      });
+    }
+  })
+  setTimeout(() => {
+    writeFile(`emot/data/emotjson.js`, `export default ${JSON.stringify(emotArray)}`)
+  }, 30000)
+}
+
+download()
