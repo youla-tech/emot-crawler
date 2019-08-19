@@ -94,41 +94,58 @@ function download () {
       data = data.slice(data.indexOf('['))
       data = JSON.parse(data)
       Array.from(data).forEach(element => {
-        request(element, (error, response, body) => {
-          if (!error && response.statusCode == 200) {
-            const $ = cheerio.load(body)
-            const $list = $('.artile_des')
-            let title = $('.pic-title > h1 > a').text()
-            title = title.slice(0, title.indexOf('（'))
-            const emotGroup = {
-              title,
-              list: []
-            }
-            console.log(emotGroup)
-            for (let i = 0; i < $list.length; i++) {
-              const obj = {}
-              const $listItem = $list[i];
-              const $target = $('img', $listItem)
-              obj.url = $target.prop('src')
-              obj.desc = $target.prop('alt')
-              emotGroup.list.push(obj)
-              if (!fs.existsSync(path.resolve(__dirname, title))) {
-                fs.mkdirSync(path.resolve(__dirname, title))
+        try {
+          request(element, (error, response, body) => {
+            try{
+              // console.log(response.statusCode)
+              if (!error && response.statusCode == 200) {
+                const $ = cheerio.load(body)
+                const $list = $('.artile_des')
+                let title = $('.pic-title > h1 > a').text()
+                title = title.slice(0, title.indexOf('（'))
+                const emotGroup = {
+                  title,
+                  list: []
+                }
+
+                for (let i = 0; i < $list.length; i++) {
+                  const obj = {}
+                  const $listItem = $($list[i]);
+                  const $target = $('img', $listItem)
+                  console.log($target.prop('src'))
+                  obj.url = $target.prop('src')
+                  obj.desc = $target.prop('alt')
+                  emotGroup.list.push(obj)
+                  if (!fs.existsSync(path.resolve(__dirname, title))) {
+                    fs.mkdirSync(path.resolve(__dirname, title))
+                  }
+                  let fileName = obj.url.slice(obj.url.lastIndexOf('/') + 1)
+                  downloadFile(obj.url, `pics/${title}/${fileName}`, function(){
+                    console.log(`${fileName} 下载成功`);
+                  })
+                }
+                writeFile(`data/${title}.json`, `export default ${JSON.stringify(emotGroup)}`)
+                emotArray.push(emotGroup)
               }
-              let fileName = obj.url.slice(obj.url.lastIndexOf('/') + 1)
-              downloadFile(obj.url, `pics/${title}/${fileName}`, function(){
-                console.log(`${fileName} 下载成功`);
-              })
+            }catch(e) {
             }
-            emotArray.push(emotGroup)
-          }
-        })
+          })
+        } catch(e) {
+
+        }
       });
     }
   })
   setTimeout(() => {
     writeFile(`emot/data/emotjson.js`, `export default ${JSON.stringify(emotArray)}`)
-  }, 30000)
+  }, 60000)
 }
 
+let k = 1
 download()
+setInterval(() => {
+  console.log('==========================\n')
+  console.log(`执行 ${k}`)
+  k += 1
+  download()
+}, 10000)
