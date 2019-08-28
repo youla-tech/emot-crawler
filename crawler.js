@@ -112,10 +112,11 @@ function download () {
                   const obj = {}
                   const $listItem = $($list[i]);
                   const $target = $('img', $listItem)
-                  console.log($target.prop('src'))
-                  obj.url = $target.prop('src')
+                  // console.log('--- ', $target, $target.html())
+                  obj.url = $target.prop('data-cfsrc')
                   obj.desc = $target.prop('alt')
                   emotGroup.list.push(obj)
+                  console.log(obj)
                   if (!fs.existsSync(path.resolve(__dirname, `pics/${title}`))) {
                     fs.mkdirSync(path.resolve(__dirname, `pics/${title}`), {
                       recursive: true
@@ -127,7 +128,7 @@ function download () {
                     console.log(`${fileName} 下载成功`);
                   })
                 }
-                writeFile(`data/${title}.json`, `export default ${JSON.stringify(emotGroup)}`)
+                writeFile(`emot/data/${title}.json`, `export default ${JSON.stringify(emotGroup)}`)
                 emotArray.push(emotGroup)
               }
             }catch(e) {
