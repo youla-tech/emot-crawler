@@ -9,9 +9,12 @@ var request = require('request');
 const cheerio = require('cheerio')
 const fs = require('fs')
 const path = require('path')
+const EventEmitter = require('events').EventEmitter
 let $ = null
 const dirPreix = ['组件', '系统', 'PRD', '模板']
 const PAGESIZE = 31
+
+const event = new EventEmitter()
 
 function writeFile (file, value, callback) {
   fs.writeFile(path.resolve(__dirname, file), value, () => {
@@ -24,14 +27,16 @@ function writeFile (file, value, callback) {
 function getRpInfoList (i = 1) {
   return new Promise((resolve, reject) => {
     const RPInfoList = []
-    request(`https://www.pmdaniu.com/explore/rp?page=${i}`, (error, response, body) => {
+    request(`https://www.pmdaniu.com/explore/rp?page=${i}`, async (error, response, body) => {
       if (!error && response.statusCode == 200) {
         body = body.replace(/[\n\t]/g, '')
         $ = cheerio.load(body)
         const rpItemList = $('.home-rp_item')
         for (let i = rpItemList.length - 1; i >= 0; i--) {
-          const rpItem = parseRPItem(rpItemList[i])
+          const rpItem = await parseRPItem(rpItemList[i])
           rpItem && RPInfoList.push(rpItem)
+          console.log('\t||||--> Parsing Rp Item ' + i)
+          // console.log('RPList ', JSON.stringify(RPInfoList))
         }
         resolve(RPInfoList)
       } else {
@@ -61,7 +66,7 @@ async function parseRPItem (rpItem) {
   }
 
   const link = await fetchFileUri(rpLink.replace('detail', 'download'))
-  console.log('Get Link ', link)
+  // console.log('\n\t Get Link ', link)
 
   return {
     name: rpName,
@@ -80,14 +85,15 @@ function fetchFileUri (link) {
       }
     }, (error, response, body) => {
       resolve(response.request.href)
-        console.log('Fetch File Uri ----- ', response.request.href)
     })
   })
 }
 
 function downloadFile(uri, filename, callback){
   if (!filename || fs.existsSync(path.resolve(__dirname, filename))) {
+    console.log('\t||||--> File "', filename, '" has already exists')
     callback && callback()
+    return
   }
 
   let dirs = []
@@ -106,42 +112,52 @@ function downloadFile(uri, filename, callback){
 }
 
 let RPInfoList = []
+let isFinish = false
 
 function run () {
-  return new Promise((resolve, reject) => {
-    const rp = RPInfoList.shift()
-    console.log('\n\t')
-    console.log('Saving File ', `rp/${rp.tag}/${rp.name}.rp`)
-    downloadFile(rp.link, `rp/${rp.tag}/${rp.name}.rp`, () => {
-      if (RPInfoList.length) {
-        run()
-        resolve(false)
-      } else {
-        resolve(true)
-      }
-    })
-  })
-}
-
-function thread (index) {
-  return new Promise(async (resolve, reject) => {
-    if (!RPInfoList.length) {
-      const list = await getRpInfoList(index)
-      RPInfoList = RPInfoList.concat(list)
+  const rp = RPInfoList.shift()
+  if (!rp || rp.then) {
+    return
+  }
+  console.log('\t||||--> Saving File: ', `rp/${rp.tag}/${rp.name}.rp`)
+  downloadFile(rp.link, `rp/${rp.tag}/${rp.name}.rp`, () => {
+    if (RPInfoList.length) {
+      run()
+    } else {
+      return setTimeout(() => {
+        event.emit('finish', true)
+      }, 1500)
     }
-    run().then(isFinish => {
-      resolve(!!isFinish)
-    })
   })
 }
 
-let index = PAGESIZE
-async function start () {
-  const isFinish = await thread(index)
+async function thread (index) {
+  console.log('\n||||--> Start Parsing Rp Info')
+  if (!RPInfoList.length) {
+    RPInfoList = await getRpInfoList(index)
+  }
+  if (!RPInfoList.length) {
+    console.log('\n||||--> Without Valid File To Download')
+    event.emit('finish', true)
+  }
+  console.log('\n||||--> Start Downlading Rp File')
+  run()
+}
+
+let index = 1
+function start () {
+  if (index < 1) {
+    console.log('\n||||--> End <-- ||||\n')
+    return
+  }
+  console.log('\n||||--> Start Thread ', index)
+  thread(index)
+}
+event.on('finish', (isFinish) => {
   if (isFinish) {
     index--
     start()
   }
-}
+})
 
 start()
