@@ -11,17 +11,12 @@ const fs = require('fs')
 const path = require('path')
 const EventEmitter = require('events').EventEmitter
 let $ = null
+// 目录
 const dirPreix = ['组件', '系统', 'PRD', '模板']
+// 页码数
 const PAGESIZE = 31
 
 const event = new EventEmitter()
-
-function writeFile (file, value, callback) {
-  fs.writeFile(path.resolve(__dirname, file), value, () => {
-    console.log('File Created: ', file)
-    callback && callback()
-  })
-}
 
 // 获取某页的 RP 信息
 function getRpInfoList (i = 1) {
@@ -66,7 +61,6 @@ async function parseRPItem (rpItem) {
   }
 
   const link = await fetchFileUri(rpLink.replace('detail', 'download'))
-  // console.log('\n\t Get Link ', link)
 
   return {
     name: rpName,
@@ -76,6 +70,7 @@ async function parseRPItem (rpItem) {
   }
 }
 
+// 获取真正的下载url --> 时间久了，Cookie 需要替换
 function fetchFileUri (link) {
   return new Promise(resolve =>{
     request(link, {
@@ -112,7 +107,6 @@ function downloadFile(uri, filename, callback){
 }
 
 let RPInfoList = []
-let isFinish = false
 
 function run () {
   const rp = RPInfoList.shift()
@@ -144,7 +138,7 @@ async function thread (index) {
   run()
 }
 
-let index = 1
+let index = PAGESIZE
 function start () {
   if (index < 1) {
     console.log('\n||||--> End <-- ||||\n')
