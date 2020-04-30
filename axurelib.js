@@ -44,7 +44,7 @@ function getRpInfoList (i = 1) {
 // 获取可下载的 RP 信息
 async function parseRPItem (rpItem) {
   if (!rpItem) return ''
-  const hasDownloadText = $(rpItem).find('.home-rplib_item_num > span').text()
+  const hasDownloadText = $(rpItem).find('.home-rplib_item_num').next().text()
   const ta = (/\d+/).exec(hasDownloadText)
   if (ta.length && ta[0] && +ta[0] < 100) {
     return ''
