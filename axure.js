@@ -42,7 +42,7 @@ function getRpInfoList (i = 1) {
 }
 
 // 获取可下载的 RP 信息
-function parseRPItem (rpItem) {
+async function parseRPItem (rpItem) {
   if (!rpItem) return ''
   const hasDownloadText = $(rpItem).find('.home-rp_item_num').text()
   const canDownload = hasDownloadText.indexOf('下载') !== -1
@@ -59,23 +59,31 @@ function parseRPItem (rpItem) {
       return
     }
   }
+
+  const link = await fetchFileUri(rpLink.replace('detail', 'download'))
+  console.log('Get Link ', link)
+
   return {
     name: rpName,
-    link: rpLink,
+    link: link,
     tag: rpTag,
     desc: rpDesc
   }
 }
 
-function patchEmotUrl () {
-  for (let i = 1; i < 625; i++) {
-    getEmotUrlList(i).then((emotUrlArray) => {
-      console.log(emotUrlArray)
-      writeFile(`emot/${i}.js`, `export default ${JSON.stringify(emotUrlArray)}`)
+function fetchFileUri (link) {
+  return new Promise(resolve =>{
+    request(link, {
+      headers: {
+        Cookie: 'Hm_lvt_d642623fc3f6afb8c874ae3bfbbd8391=1588057863,1588057880; daniu=7TZXMOvhpk5M4nRBU1N9YN9phJyhDAIQmr9xz8sa; Hm_lvt_7f14406901827f30750e659db6c1ab68=1588149546; Hm_lpvt_7f14406901827f30750e659db6c1ab68=1588149584; Hm_lvt_d3db21ed7b338b6b97b365817a4dd104=1588151844; Hm_lpvt_d3db21ed7b338b6b97b365817a4dd104=1588151844; Hm_lpvt_d642623fc3f6afb8c874ae3bfbbd8391=1588218119',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36'
+      }
+    }, (error, response, body) => {
+      resolve(response.request.href)
+        console.log('Fetch File Uri ----- ', response.request.href)
     })
-  }
+  })
 }
-
 
 function downloadFile(uri, filename, callback){
   if (!filename || fs.existsSync(path.resolve(__dirname, filename))) {
@@ -98,19 +106,18 @@ function downloadFile(uri, filename, callback){
 }
 
 let RPInfoList = []
-let isFinish = false
 
 function run () {
   return new Promise((resolve, reject) => {
-    isFinish = false
-    const rp = RPInfoList.pop()
+    const rp = RPInfoList.shift()
+    console.log('\n\t')
+    console.log('Saving File ', `rp/${rp.tag}/${rp.name}.rp`)
     downloadFile(rp.link, `rp/${rp.tag}/${rp.name}.rp`, () => {
       if (RPInfoList.length) {
         run()
         resolve(false)
       } else {
-        isFinish = true
-        resolve(isFinish)
+        resolve(true)
       }
     })
   })
@@ -119,7 +126,8 @@ function run () {
 function thread (index) {
   return new Promise(async (resolve, reject) => {
     if (!RPInfoList.length) {
-      RPInfoList = await getRpInfoList(index)
+      const list = await getRpInfoList(index)
+      RPInfoList = RPInfoList.concat(list)
     }
     run().then(isFinish => {
       resolve(!!isFinish)
