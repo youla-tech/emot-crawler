@@ -14,7 +14,7 @@ let $ = null
 // 目录
 const dirPreix = ['组件', '系统', 'PRD', '模板']
 // 页码数
-const PAGESIZE = 21
+const PAGESIZE = 2
 
 const event = new EventEmitter()
 
@@ -57,7 +57,7 @@ async function parseRPItem (rpItem) {
   const link = await fetchFileUri(rpLink.replace('detail', 'download'))
 
   return {
-    name: rpName,
+    name: rpName.trim().replace('|', ''),
     link: link,
     tag: rpTag
   }
