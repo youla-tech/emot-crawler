@@ -14,7 +14,7 @@ let $ = null
 // 目录
 const dirPreix = ['组件', '系统', 'PRD', '模板']
 // 页码数
-const PAGESIZE = 2
+const PAGESIZE = 21
 
 const event = new EventEmitter()
 
@@ -46,13 +46,13 @@ async function parseRPItem (rpItem) {
   if (!rpItem) return ''
   const hasDownloadText = $(rpItem).find('.home-rplib_item_num').next().text()
   const ta = (/\d+/).exec(hasDownloadText)
-  if (ta.length && ta[0] && +ta[0] < 100) {
+  if (ta.length && ta[0] && +ta[0] >= 100) {
     return ''
   }
 
   const rpName = $(rpItem).find('h4 > a').text()
   const rpLink = $(rpItem).find('.home-rplib_img_wrap').prop('href')
-  const rpTag = '组件'
+  const rpTag = '组件100'
 
   const link = await fetchFileUri(rpLink.replace('detail', 'download'))
 
