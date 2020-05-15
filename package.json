@@ -9,6 +9,7 @@
   "license": "ISC",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
+    "pinyin": "^2.9.1",
     "qs": "^6.9.4",
     "request": "^2.88.0"
   },
