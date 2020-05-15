@@ -101,7 +101,7 @@ function getChildName (children) {
 function isValidImage (url) {
   return new Promise((resolve, reject) => {
     request(url, (error, response, body) => {
-      if (!error && response.statusCode == 200) {
+      if (!error && response.statusCode == 200 && !body.includes('<!DOCTYPE')) {
         resolve(true)
       } else {
         resolve(false)
@@ -119,9 +119,12 @@ function iconFilter (items) {
         url = url[0] || ''
         url = (url.indexOf('?') !== -1 || url.indexOf('/') !== -1) ? url.slice(0, -1) : url
         valiable = await isValidImage(url[0] + '/favicon.ico')
-        it.icon = valiable ? url : '/logo.png'
+        if (!valiable) {
+          valiable = await isValidImage(url[0] + '/images/favicon.ico')
+        }
+        it.icon = valiable ? url : '/aLinks/logo.png'
       } else {
-        it.icon = '/logo.png'
+        it.icon = '/aLinks/logo.png'
       }
     }
   })
@@ -145,7 +148,7 @@ async function createMdFile () {
       // })
       for (let index = 0; index < it.web.length; index++) {
         const itw = it.web[index]
-        let matcher = '/logo.png'
+        let matcher = '/aLinks/logo.png'
         if (itw.url) {
           try {
             matcher = itw.url.match(/^http[s]?:\/\/(.*?)[\/|\?]/)
@@ -157,9 +160,9 @@ async function createMdFile () {
             }
             matcher = matcher + '/favicon.ico'
             const valiable = await isValidImage(matcher)
-            matcher = valiable ? matcher : '/logo.png'
+            matcher = valiable ? matcher : '/aLinks/logo.png'
           } catch {
-            matcher = '/logo.png'
+            matcher = '/aLinks/logo.png'
           }
         }
 
@@ -198,6 +201,9 @@ async function start () {
   // })
   // createSidebar()
   createMdFile()
+  // console.log(await isValidImage("https://eamiear.github.io/aLinks/logo.png"))
 }
 
 start()
+// https://www.12306.cn/favicon.ico
+// isValidImage("https://eamiear.github.io/aLinks/logo.png")
