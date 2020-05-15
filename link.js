@@ -163,7 +163,7 @@ async function createMdFile () {
           }
         }
 
-        const image = itw.images_url || matcher
+        const image = matcher
         const info = {
           link: itw.url,
           icon: image,
